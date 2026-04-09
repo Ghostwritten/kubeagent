@@ -1,6 +1,6 @@
 # Phase 03 — K8s Executor + Read Tools
 
-> Status: `pending`
+> Status: `completed`
 > Depends on: Phase 02
 > Master Plan: [00-master-plan.md](00-master-plan.md)
 
