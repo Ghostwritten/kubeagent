@@ -20,7 +20,7 @@
 
 | Phase | Title | Status | Doc |
 |-------|-------|--------|-----|
-| 01 | Project Scaffold | `pending` | [Phase-01_project-scaffold.md](Phase-01_project-scaffold.md) |
+| 01 | Project Scaffold | `completed` | [Phase-01_project-scaffold.md](Phase-01_project-scaffold.md) |
 | 02 | Cluster Context | `pending` | [Phase-02_cluster-context.md](Phase-02_cluster-context.md) |
 | 03 | K8s Executor + Read Tools | `pending` | [Phase-03_k8s-executor-read-tools.md](Phase-03_k8s-executor-read-tools.md) |
 | 04 | K8s Write Tools + kubectl | `pending` | [Phase-04_k8s-write-tools-kubectl.md](Phase-04_k8s-write-tools-kubectl.md) |

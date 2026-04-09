@@ -1,6 +1,6 @@
 # Phase 01 — Project Scaffold + First-Run Experience
 
-> Status: `pending`
+> Status: `completed` (2026-04-10)
 > Depends on: None
 > Master Plan: [00-master-plan.md](00-master-plan.md)
 
