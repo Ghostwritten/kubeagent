@@ -59,6 +59,32 @@ Interface Layer  →  Agent Layer  →  Capability Layer  →  Infrastructure La
 
 ---
 
+## Installation
+
+| Method | Command | Note |
+|--------|---------|------|
+| **pipx (recommended)** | `pipx install kubeagent` | Isolated environment, no system pollution |
+| **pip** | `pip install kubeagent` | Traditional |
+| **Homebrew** | `brew install kubeagent` | macOS (later phase) |
+
+## First-Run Experience
+
+**Hybrid mode: auto-detect + guided setup (like Claude Code)**
+
+- **Auto-trigger**: First run detects environment, guides only missing items
+- **`kubeagent init`**: Full re-configuration
+- **`kubeagent doctor`**: Diagnose + fix issues
+
+**Pre-flight check on every run:**
+- Detect `~/.kube/config` and current context
+- Detect API keys via env vars (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `KUBEAGENT_API_KEY`)
+- Detect `~/.kubeagent/config.yaml`
+
+**Configuration storage:**
+- Path: `~/.kubeagent/`
+- Config: `~/.kubeagent/config.yaml`
+- Env var overrides: `KUBEAGENT_API_KEY`, `KUBEAGENT_MODEL_ENDPOINT`, `KUBEAGENT_MODEL`
+
 ## Interaction Model
 
 - **Primary**: Conversational dialogue (natural language)
