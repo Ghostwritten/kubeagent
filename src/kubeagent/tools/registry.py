@@ -52,17 +52,38 @@ def get_registry() -> ToolRegistry:
 def _discover_tools(registry: ToolRegistry) -> None:
     """Auto-discover and register all built-in tools."""
     from kubeagent.tools.builtin import (
+        apply,
+        configmaps,
+        delete,
+        describe,
+        events,
+        kubectl,
+        logs,
+        namespaces,
+        nodes,
+        nodes_ops,
+        pods,
+        restart,
+        scale,
+        services,
+    )
+
+    for module in [
+        pods,
+        nodes,
+        namespaces,
+        services,
         configmaps,
         describe,
         events,
         logs,
-        namespaces,
-        nodes,
-        pods,
-        services,
-    )
-
-    for module in [pods, nodes, namespaces, services, configmaps, describe, events, logs]:
+        apply,
+        delete,
+        scale,
+        restart,
+        nodes_ops,
+        kubectl,
+    ]:
         for attr_name in dir(module):
             attr = getattr(module, attr_name)
             if isinstance(attr, type) and issubclass(attr, BaseTool) and attr is not BaseTool:

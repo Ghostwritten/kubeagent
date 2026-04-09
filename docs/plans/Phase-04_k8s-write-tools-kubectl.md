@@ -1,6 +1,6 @@
 # Phase 04 — K8s Write Tools + kubectl
 
-> Status: `pending`
+> Status: `completed`
 > Depends on: Phase 03
 > Master Plan: [00-master-plan.md](00-master-plan.md)
 

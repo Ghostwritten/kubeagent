@@ -8,6 +8,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
+import yaml
 from kubernetes import client, config
 from kubernetes.client import ApiClient
 
@@ -159,6 +160,40 @@ class KubeExecutor(ABC):
         container: str | None = None,
         tail_lines: int = 100,
     ) -> LogEntry: ...
+
+    # -- Write operations --
+
+    @abstractmethod
+    def apply_yaml(
+        self, yaml_content: str, namespace: str = "default", dry_run: bool = False
+    ) -> dict[str, Any]: ...
+
+    @abstractmethod
+    def delete_resource(
+        self, kind: str, name: str, namespace: str = "default", dry_run: bool = False
+    ) -> dict[str, Any]: ...
+
+    @abstractmethod
+    def scale_resource(
+        self,
+        kind: str,
+        name: str,
+        namespace: str = "default",
+        replicas: int = 1,
+        dry_run: bool = False,
+    ) -> dict[str, Any]: ...
+
+    @abstractmethod
+    def restart_pod(self, name: str, namespace: str = "default") -> dict[str, Any]: ...
+
+    @abstractmethod
+    def cordon_node(self, name: str) -> dict[str, Any]: ...
+
+    @abstractmethod
+    def uncordon_node(self, name: str) -> dict[str, Any]: ...
+
+    @abstractmethod
+    def drain_node(self, name: str, force: bool = False) -> dict[str, Any]: ...
 
 
 class PythonClientExecutor(KubeExecutor):
@@ -444,3 +479,248 @@ class PythonClientExecutor(KubeExecutor):
             container=container,
             lines=resp.split("\n") if resp else [],
         )
+
+    # -- Write operations --
+
+    def apply_yaml(
+        self, yaml_content: str, namespace: str = "default", dry_run: bool = False
+    ) -> dict[str, Any]:
+        """Create or update resources from YAML content."""
+        dry_run_flag = "All" if dry_run else None
+        try:
+            docs = list(yaml.safe_load_all(yaml_content))
+        except yaml.YAMLError as e:
+            raise ValueError(f"Invalid YAML: {e}") from e
+
+        results: list[dict[str, str]] = []
+        for doc in docs:
+            if not doc:
+                continue
+            kind = doc.get("kind", "")
+            name = doc.get("metadata", {}).get("name", "")
+            doc_ns = doc.get("metadata", {}).get("namespace", namespace) or namespace
+
+            try:
+                self._apply_single(doc, doc_ns, dry_run_flag)
+                action = "dry-run" if dry_run else "created"
+            except client.ApiException as e:
+                if e.status == 409:
+                    self._patch_single(doc, doc_ns, dry_run_flag)
+                    action = "dry-run-updated" if dry_run else "updated"
+                else:
+                    raise RuntimeError(f"Failed to apply {kind}/{name}: {e}") from e
+
+            results.append({"kind": kind, "name": name, "namespace": doc_ns, "action": action})
+
+        return {"applied": results, "dry_run": dry_run}
+
+    def _apply_single(self, doc: dict[str, Any], namespace: str, dry_run: str | None) -> None:
+        """Create a single resource from its dict representation."""
+        kind = doc.get("kind", "").lower()
+        if kind == "pod":
+            self.v1.create_namespaced_pod(namespace, body=doc, dry_run=dry_run)
+        elif kind == "service":
+            self.v1.create_namespaced_service(namespace, body=doc, dry_run=dry_run)
+        elif kind == "configmap":
+            self.v1.create_namespaced_config_map(namespace, body=doc, dry_run=dry_run)
+        elif kind == "namespace":
+            self.v1.create_namespace(body=doc, dry_run=dry_run)
+        elif kind == "deployment":
+            self.apps_v1.create_namespaced_deployment(namespace, body=doc, dry_run=dry_run)
+        elif kind == "statefulset":
+            self.apps_v1.create_namespaced_stateful_set(namespace, body=doc, dry_run=dry_run)
+        elif kind == "daemonset":
+            self.apps_v1.create_namespaced_daemon_set(namespace, body=doc, dry_run=dry_run)
+        else:
+            raise ValueError(f"Unsupported kind for apply: {kind}")
+
+    def _patch_single(self, doc: dict[str, Any], namespace: str, dry_run: str | None) -> None:
+        """Patch (update) an existing resource."""
+        kind = doc.get("kind", "").lower()
+        name = doc.get("metadata", {}).get("name", "")
+        if kind == "pod":
+            self.v1.patch_namespaced_pod(name, namespace, body=doc, dry_run=dry_run)
+        elif kind == "service":
+            self.v1.patch_namespaced_service(name, namespace, body=doc, dry_run=dry_run)
+        elif kind == "configmap":
+            self.v1.patch_namespaced_config_map(name, namespace, body=doc, dry_run=dry_run)
+        elif kind == "namespace":
+            self.v1.patch_namespace(name, body=doc, dry_run=dry_run)
+        elif kind == "deployment":
+            self.apps_v1.patch_namespaced_deployment(name, namespace, body=doc, dry_run=dry_run)
+        elif kind == "statefulset":
+            self.apps_v1.patch_namespaced_stateful_set(name, namespace, body=doc, dry_run=dry_run)
+        elif kind == "daemonset":
+            self.apps_v1.patch_namespaced_daemon_set(name, namespace, body=doc, dry_run=dry_run)
+        else:
+            raise ValueError(f"Unsupported kind for patch: {kind}")
+
+    def delete_resource(
+        self, kind: str, name: str, namespace: str = "default", dry_run: bool = False
+    ) -> dict[str, Any]:
+        """Delete a resource by kind and name."""
+        dry_run_flag = "All" if dry_run else None
+        kind_lower = kind.lower()
+        try:
+            if kind_lower == "pod":
+                self.v1.delete_namespaced_pod(name, namespace, dry_run=dry_run_flag)
+            elif kind_lower == "service":
+                self.v1.delete_namespaced_service(name, namespace, dry_run=dry_run_flag)
+            elif kind_lower == "configmap":
+                self.v1.delete_namespaced_config_map(name, namespace, dry_run=dry_run_flag)
+            elif kind_lower == "namespace":
+                self.v1.delete_namespace(name, dry_run=dry_run_flag)
+            elif kind_lower == "deployment":
+                self.apps_v1.delete_namespaced_deployment(name, namespace, dry_run=dry_run_flag)
+            elif kind_lower == "statefulset":
+                self.apps_v1.delete_namespaced_stateful_set(name, namespace, dry_run=dry_run_flag)
+            elif kind_lower == "daemonset":
+                self.apps_v1.delete_namespaced_daemon_set(name, namespace, dry_run=dry_run_flag)
+            else:
+                raise ValueError(f"Unsupported kind for delete: {kind}")
+        except client.ApiException as e:
+            if e.status == 404:
+                return {"deleted": False, "kind": kind, "name": name, "reason": "not found"}
+            raise RuntimeError(f"Failed to delete {kind}/{name}: {e}") from e
+
+        action = "dry-run-deleted" if dry_run else "deleted"
+        return {
+            "deleted": True,
+            "kind": kind,
+            "name": name,
+            "namespace": namespace,
+            "action": action,
+        }
+
+    def scale_resource(
+        self,
+        kind: str,
+        name: str,
+        namespace: str = "default",
+        replicas: int = 1,
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """Scale a deployment or statefulset."""
+        dry_run_flag = "All" if dry_run else None
+        kind_lower = kind.lower()
+        body = {"spec": {"replicas": replicas}}
+
+        try:
+            if kind_lower == "deployment":
+                self.apps_v1.patch_namespaced_deployment(
+                    name, namespace, body=body, dry_run=dry_run_flag
+                )
+            elif kind_lower == "statefulset":
+                self.apps_v1.patch_namespaced_stateful_set(
+                    name, namespace, body=body, dry_run=dry_run_flag
+                )
+            else:
+                raise ValueError(f"Cannot scale kind: {kind}")
+        except client.ApiException as e:
+            if e.status == 404:
+                raise RuntimeError(f"{kind}/{name} not found in {namespace}") from e
+            raise RuntimeError(f"Failed to scale {kind}/{name}: {e}") from e
+
+        action = "dry-run-scaled" if dry_run else "scaled"
+        return {
+            "scaled": True,
+            "kind": kind,
+            "name": name,
+            "namespace": namespace,
+            "replicas": replicas,
+            "action": action,
+        }
+
+    def restart_pod(self, name: str, namespace: str = "default") -> dict[str, Any]:
+        """Delete a pod to trigger restart (works for deployment-managed pods)."""
+        try:
+            pod = self.v1.read_namespaced_pod(name, namespace)
+            pod_dict = pod.to_dict() if hasattr(pod, "to_dict") else {}
+        except client.ApiException as e:
+            raise RuntimeError(f"Failed to read pod {name}: {e}") from e
+
+        try:
+            self.v1.delete_namespaced_pod(name, namespace)
+        except client.ApiException as e:
+            raise RuntimeError(f"Failed to delete pod {name}: {e}") from e
+
+        return {
+            "restarted": True,
+            "name": name,
+            "namespace": namespace,
+            "previous_status": pod_dict.get("status", {}).get("phase", "Unknown"),
+        }
+
+    def cordon_node(self, name: str) -> dict[str, Any]:
+        """Mark a node as unschedulable."""
+        body = {"spec": {"unschedulable": True}}
+        try:
+            self.v1.patch_node(name, body=body)
+        except client.ApiException as e:
+            if e.status == 404:
+                raise RuntimeError(f"Node {name} not found") from e
+            raise RuntimeError(f"Failed to cordon node {name}: {e}") from e
+
+        return {"cordoned": True, "name": name}
+
+    def uncordon_node(self, name: str) -> dict[str, Any]:
+        """Mark a node as schedulable."""
+        body = {"spec": {"unschedulable": False}}
+        try:
+            self.v1.patch_node(name, body=body)
+        except client.ApiException as e:
+            if e.status == 404:
+                raise RuntimeError(f"Node {name} not found") from e
+            raise RuntimeError(f"Failed to uncordon node {name}: {e}") from e
+
+        return {"uncordoned": True, "name": name}
+
+    def drain_node(self, name: str, force: bool = False) -> dict[str, Any]:
+        """Drain a node: cordon + evict all pods."""
+        # Cordon first
+        self.cordon_node(name)
+
+        # Get all pods on this node
+        field_selector = f"spec.nodeName={name}"
+        try:
+            resp = self.v1.list_pod_for_all_namespaces(field_selector=field_selector)
+        except Exception as e:
+            raise RuntimeError(f"Failed to list pods on node {name}: {e}") from e
+
+        evicted: list[str] = []
+        skipped: list[str] = []
+        for item in resp.items:
+            pod_name = item.metadata.name
+            pod_ns = item.metadata.namespace or "default"
+
+            # Skip daemonset pods (can't be evicted)
+            is_daemonset = any(
+                ref.kind == "DaemonSet" for ref in (item.metadata.owner_references or [])
+            )
+            if is_daemonset:
+                skipped.append(f"{pod_ns}/{pod_name}")
+                continue
+
+            try:
+                evict_body = client.V1Eviction(
+                    metadata=client.V1ObjectMeta(name=pod_name, namespace=pod_ns),
+                    delete_options=client.V1DeleteOptions(grace_period_seconds=0),
+                )
+                self.v1.create_namespaced_pod_eviction(pod_name, pod_ns, body=evict_body)
+                evicted.append(f"{pod_ns}/{pod_name}")
+            except client.ApiException:
+                if force:
+                    try:
+                        self.v1.delete_namespaced_pod(pod_name, pod_ns, grace_period_seconds=0)
+                        evicted.append(f"{pod_ns}/{pod_name} (forced)")
+                    except client.ApiException as e2:
+                        skipped.append(f"{pod_ns}/{pod_name} (error: {e2.reason})")
+                else:
+                    skipped.append(f"{pod_ns}/{pod_name} (eviction failed)")
+
+        return {
+            "drained": True,
+            "name": name,
+            "evicted": evicted,
+            "skipped": skipped,
+        }
