@@ -4,8 +4,18 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
+from unittest.mock import MagicMock
 
+from kubeagent.agent.deps import KubeAgentDeps
+from kubeagent.agent.memory import (
+    AuditEntry,
+    AuditLogger,
+    MemoryManager,
+    PreferencesManager,
+)
+from kubeagent.agent.prompt_engine import build_system_prompt
 from kubeagent.config.settings import KubeAgentConfig, MemoryConfig
+from kubeagent.infra.storage import SQLiteStorage
 
 
 class TestMemoryConfig:
@@ -20,9 +30,6 @@ class TestMemoryConfig:
         config = KubeAgentConfig()
         assert hasattr(config, "memory")
         assert config.memory.enabled is True
-
-
-from kubeagent.infra.storage import SQLiteStorage
 
 
 class TestSQLiteStorage:
@@ -59,7 +66,9 @@ class TestSQLiteStorage:
                 "INSERT INTO preferences (key, value) VALUES (?, ?)",
                 ("test_key", "test_value"),
             )
-            row = storage.fetchone("SELECT value FROM preferences WHERE key = ?", ("test_key",))
+            row = storage.fetchone(
+                "SELECT value FROM preferences WHERE key = ?", ("test_key",)
+            )
             assert row is not None
             assert row[0] == "test_value"
             storage.close()
@@ -80,9 +89,6 @@ class TestSQLiteStorage:
             version = storage2.fetchone("PRAGMA user_version")
             assert version[0] == 1
             storage2.close()
-
-
-from kubeagent.agent.memory import AuditEntry, AuditLogger, MemoryManager, PreferencesManager
 
 
 class TestAuditLogger:
@@ -135,6 +141,8 @@ class TestAuditLogger:
             logger._storage.close()
 
     def test_redact_sensitive_keys(self) -> None:
+        import json
+
         with tempfile.TemporaryDirectory() as tmpdir:
             logger = self._make_logger(tmpdir)
             logger.log(
@@ -151,8 +159,6 @@ class TestAuditLogger:
                 success=True,
             )
             entries = logger.query()
-            import json
-
             args = json.loads(entries[0].args)
             assert args["yaml_content"] == "apiVersion: v1"
             assert args["secret_data"] == "[REDACTED]"
@@ -283,25 +289,16 @@ class TestMemoryManager:
 
 class TestDepsMemoryField:
     def test_default_none(self) -> None:
-        from kubeagent.agent.deps import KubeAgentDeps
-
         deps = KubeAgentDeps(config=KubeAgentConfig())
         assert deps.memory is None
 
     def test_with_memory(self) -> None:
-        from kubeagent.agent.deps import KubeAgentDeps
-
         with tempfile.TemporaryDirectory() as tmpdir:
             config = MemoryConfig(db_path=str(Path(tmpdir) / "test.db"))
             mm = MemoryManager(config)
             deps = KubeAgentDeps(config=KubeAgentConfig(), memory=mm)
             assert deps.memory is not None
             mm.close()
-
-
-from unittest.mock import MagicMock
-
-from kubeagent.agent.deps import KubeAgentDeps
 
 
 class TestCallToolAuditIntegration:
@@ -319,7 +316,9 @@ class TestCallToolAuditIntegration:
                 auto_approve=True,
                 memory=mm,
             )
-            _call_tool(DeleteResourceTool, ctx, kind="pod", name="test", namespace="default")
+            _call_tool(
+                DeleteResourceTool, ctx, kind="pod", name="test", namespace="default"
+            )
             entries = mm.audit.query()
             assert len(entries) == 1
             assert entries[0].tool_name == "delete_resource"
@@ -351,16 +350,11 @@ class TestCallToolAuditIntegration:
         assert "DENIED" not in result
 
 
-from kubeagent.agent.prompt_engine import build_system_prompt
-
-
 class TestPromptEnginePreferences:
     def test_prompt_includes_memory_preferences(self) -> None:
         config = KubeAgentConfig()
-        prompt = build_system_prompt(
-            config,
-            memory_preferences="## User Preferences (from memory)\n- language: zh\n- output_style: yaml",
-        )
+        mem_prefs = "## User Preferences (from memory)\n- language: zh\n- output_style: yaml"
+        prompt = build_system_prompt(config, memory_preferences=mem_prefs)
         assert "language: zh" in prompt
         assert "output_style: yaml" in prompt
 
@@ -368,9 +362,6 @@ class TestPromptEnginePreferences:
         config = KubeAgentConfig()
         prompt = build_system_prompt(config)
         assert "User Preferences (from memory)" not in prompt
-
-
-import hashlib
 
 
 class TestREPLMemoryCommands:
@@ -403,13 +394,12 @@ class TestREPLMemoryCommands:
             assert repl._memory.preferences.get(key) is None
             repl._memory.close()
 
-    def test_preferences_lists_all(self, capsys) -> None:
+    def test_preferences_lists_all(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             repl = self._make_repl(tmpdir)
             repl._handle_command("/remember test pref one")
             repl._handle_command("/remember test pref two")
             repl._handle_command("/preferences")
-            # Should not raise
             repl._memory.close()
 
 
@@ -429,6 +419,41 @@ class TestRenderAuditTable:
                 success=True,
             )
         ]
-        # Should not raise
         render_audit_table(entries)
 
+
+class TestMemorySystemIntegration:
+    """End-to-end test: config -> storage -> audit + prefs -> prompt."""
+
+    def test_full_lifecycle(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = KubeAgentConfig(
+                memory=MemoryConfig(db_path=str(Path(tmpdir) / "test.db"))
+            )
+
+            # MemoryManager
+            mm = MemoryManager(config.memory)
+
+            # Store preferences
+            mm.preferences.set("language", "zh")
+            mm.preferences.set("output_style", "yaml")
+
+            # Preferences in prompt
+            prefs_section = mm.preferences.to_prompt_section()
+            prompt = build_system_prompt(config, memory_preferences=prefs_section)
+            assert "language: zh" in prompt
+
+            # Audit log
+            mm.audit.log("prod", "default", "delete_resource", {"kind": "pod"}, "ok", True)
+            entries = mm.audit.query()
+            assert len(entries) == 1
+
+            # Cleanup + close
+            mm.cleanup()
+            mm.close()
+
+            # Reopen — data persists
+            mm2 = MemoryManager(config.memory)
+            assert mm2.preferences.get("language") == "zh"
+            assert len(mm2.audit.query()) == 1
+            mm2.close()
