@@ -152,3 +152,24 @@ class PreferencesManager:
         for key, value in prefs.items():
             lines.append(f"- {key}: {value}")
         return "\n".join(lines)
+
+
+from kubeagent.config.settings import MemoryConfig
+
+
+class MemoryManager:
+    """Unified facade for all memory subsystems."""
+
+    def __init__(self, config: MemoryConfig) -> None:
+        self._config = config
+        self.storage = SQLiteStorage(config.db_path)
+        self.audit = AuditLogger(self.storage)
+        self.preferences = PreferencesManager(self.storage)
+
+    def cleanup(self) -> None:
+        """Run maintenance: expire old audit entries."""
+        self.audit.cleanup(retention_days=self._config.audit_retention_days)
+
+    def close(self) -> None:
+        """Close the storage connection."""
+        self.storage.close()

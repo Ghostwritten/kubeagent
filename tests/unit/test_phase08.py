@@ -82,7 +82,7 @@ class TestSQLiteStorage:
             storage2.close()
 
 
-from kubeagent.agent.memory import AuditEntry, AuditLogger, PreferencesManager
+from kubeagent.agent.memory import AuditEntry, AuditLogger, MemoryManager, PreferencesManager
 
 
 class TestAuditLogger:
@@ -244,3 +244,57 @@ class TestPreferencesManager:
             assert "zh" in section
             assert "output_style" in section
             prefs._storage.close()
+
+
+class TestMemoryManager:
+    def test_creates_subsystems(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = MemoryConfig(db_path=str(Path(tmpdir) / "test.db"))
+            mm = MemoryManager(config)
+            assert mm.audit is not None
+            assert mm.preferences is not None
+            mm.close()
+
+    def test_close_idempotent(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = MemoryConfig(db_path=str(Path(tmpdir) / "test.db"))
+            mm = MemoryManager(config)
+            mm.close()
+            mm.close()  # should not raise
+
+    def test_cleanup_delegates(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = MemoryConfig(
+                db_path=str(Path(tmpdir) / "test.db"),
+                audit_retention_days=90,
+            )
+            mm = MemoryManager(config)
+            # Insert old entry
+            mm.storage.execute(
+                "INSERT INTO audit_log (timestamp, tool_name, args, result, success) "
+                "VALUES (datetime('now', '-100 days'), 'old', '{}', 'ok', 1)"
+            )
+            mm.audit.log("c", "ns", "new", {}, "ok", True)
+            mm.cleanup()
+            entries = mm.audit.query()
+            assert len(entries) == 1
+            mm.close()
+
+
+class TestDepsMemoryField:
+    def test_default_none(self) -> None:
+        from kubeagent.agent.deps import KubeAgentDeps
+
+        deps = KubeAgentDeps(config=KubeAgentConfig())
+        assert deps.memory is None
+
+    def test_with_memory(self) -> None:
+        from kubeagent.agent.deps import KubeAgentDeps
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = MemoryConfig(db_path=str(Path(tmpdir) / "test.db"))
+            mm = MemoryManager(config)
+            deps = KubeAgentDeps(config=KubeAgentConfig(), memory=mm)
+            assert deps.memory is not None
+            mm.close()
+
