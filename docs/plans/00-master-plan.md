@@ -24,7 +24,7 @@
 | 02 | Cluster Context | `completed` | [Phase-02_cluster-context.md](Phase-02_cluster-context.md) |
 | 03 | K8s Executor + Read Tools | `completed` | [Phase-03_k8s-executor-read-tools.md](Phase-03_k8s-executor-read-tools.md) |
 | 04 | K8s Write Tools + kubectl | `completed` | [Phase-04_k8s-write-tools-kubectl.md](Phase-04_k8s-write-tools-kubectl.md) |
-| 05 | LLM Integration + Agent Core | `pending` | [Phase-05_llm-integration-agent-core.md](Phase-05_llm-integration-agent-core.md) |
+| 05 | LLM Integration + Agent Core | `completed` | [Phase-05_llm-integration-agent-core.md](Phase-05_llm-integration-agent-core.md) |
 | 06 | Interactive CLI | `pending` | [Phase-06_interactive-cli.md](Phase-06_interactive-cli.md) |
 | 07 | Prompt Engine + Policy | `pending` | [Phase-07_prompt-engine-policy.md](Phase-07_prompt-engine-policy.md) |
 | 08 | Memory System | `pending` | [Phase-08_memory-system.md](Phase-08_memory-system.md) |

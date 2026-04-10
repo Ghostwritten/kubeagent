@@ -1,6 +1,6 @@
 # Phase 05 — LLM Integration + Agent Core
 
-> Status: `pending`
+> Status: `completed`
 > Depends on: Phase 04
 > Master Plan: [00-master-plan.md](00-master-plan.md)
 
