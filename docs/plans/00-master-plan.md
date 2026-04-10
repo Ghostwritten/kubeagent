@@ -1,6 +1,6 @@
 # KubeAgent Master Plan
 
-> Last Updated: 2026-04-09
+> Last Updated: 2026-04-10
 > Design Spec: [../specs/2026-04-09-kubeagent-design.md](../specs/2026-04-09-kubeagent-design.md)
 
 ---
@@ -26,9 +26,9 @@
 | 04 | K8s Write Tools + kubectl | `completed` | [Phase-04_k8s-write-tools-kubectl.md](Phase-04_k8s-write-tools-kubectl.md) |
 | 05 | LLM Integration + Agent Core | `completed` | [Phase-05_llm-integration-agent-core.md](Phase-05_llm-integration-agent-core.md) |
 | 06 | Interactive CLI | `completed` | [Phase-06_interactive-cli.md](Phase-06_interactive-cli.md) |
-| 07 | Prompt Engine + Policy | `pending` | [Phase-07_prompt-engine-policy.md](Phase-07_prompt-engine-policy.md) |
-| 08 | Memory System | `pending` | [Phase-08_memory-system.md](Phase-08_memory-system.md) |
-| 09 | SubAgent + Model Router | `pending` | [Phase-09_subagent-model-router.md](Phase-09_subagent-model-router.md) |
+| 07 | Prompt Engine + Policy | `completed` | [Phase-07_prompt-engine-policy.md](Phase-07_prompt-engine-policy.md) |
+| 08 | Memory System | `completed` | [Phase-08_memory-system.md](Phase-08_memory-system.md) |
+| 09 | SubAgent + Model Router | `completed` | [Phase-09_subagent-model-router.md](Phase-09_subagent-model-router.md) |
 | 10 | Skill + Hook + Headless | `pending` | [Phase-10_skill-hook-headless.md](Phase-10_skill-hook-headless.md) |
 | 11 | Plugin System | `pending` | [Phase-11_plugin-system.md](Phase-11_plugin-system.md) |
 | 12 | MCP Server + Ecosystem | `pending` | [Phase-12_mcp-server-ecosystem.md](Phase-12_mcp-server-ecosystem.md) |
