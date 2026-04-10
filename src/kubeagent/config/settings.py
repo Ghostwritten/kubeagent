@@ -35,12 +35,22 @@ class OutputConfig(BaseModel):
     verbose: bool = False
 
 
+class MemoryConfig(BaseModel):
+    """Memory system configuration."""
+
+    enabled: bool = True
+    db_path: str = str(Path.home() / ".kubeagent" / "memory.db")
+    max_size_mb: int = 50
+    audit_retention_days: int = 90
+
+
 class KubeAgentConfig(BaseModel):
     """Root configuration for KubeAgent."""
 
     model: ModelConfig = Field(default_factory=ModelConfig)
     cluster: ClusterConfig = Field(default_factory=ClusterConfig)
     output: OutputConfig = Field(default_factory=OutputConfig)
+    memory: MemoryConfig = Field(default_factory=MemoryConfig)
     initialized: bool = False
 
 
