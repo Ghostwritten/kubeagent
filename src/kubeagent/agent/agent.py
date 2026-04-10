@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import json
 from typing import Any
 
@@ -10,9 +11,11 @@ from pydantic_ai import Agent, RunContext
 
 from kubeagent.agent.deps import KubeAgentDeps
 from kubeagent.agent.model import get_agent_model
+from kubeagent.agent.policy import build_impact_description, check_policy, PolicyDecision
 from kubeagent.agent.prompts import SYSTEM_PROMPT
 from kubeagent.config.settings import KubeAgentConfig, load_config
-from kubeagent.infra.executor import PythonClientExecutor
+from kubeagent.infra.executor import PythonClientExecutor, SecurityLevel
+from kubeagent.tools.registry import get_registry
 
 # ---------------------------------------------------------------------------
 # Input models for each tool (used for pydantic-ai tool schema generation)
@@ -157,16 +160,18 @@ class KubectlApplyFileInput(BaseModel):
 
 def create_agent(
     config: KubeAgentConfig | None = None,
+    system_prompt: str | None = None,
 ) -> Agent[KubeAgentDeps, str]:
     """Create and configure the KubeAgent with all tools bound."""
     if config is None:
         config = load_config()
 
     model = get_agent_model(config.model)
+    prompt = system_prompt or SYSTEM_PROMPT
 
     agent: Agent[KubeAgentDeps, str] = Agent(
         model=model,
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=prompt,
         deps_type=KubeAgentDeps,
         output_type=str,
         retries=2,
@@ -222,19 +227,76 @@ def _format_result(result: Any) -> str:
 
 
 def _call_tool(tool_class: type, ctx: RunContext[KubeAgentDeps], **kwargs: Any) -> str:
-    """Execute a tool and format the result."""
+    """Execute a tool with policy check and format the result."""
 
     tool = tool_class()
+    deps = ctx.deps
+
+    # --- Policy gate ---
+    if tool.security_level != SecurityLevel.SAFE:
+        registry = get_registry()
+        decision = check_policy(
+            tool.name,
+            registry,
+            args=kwargs,
+            auto_approve=deps.auto_approve,
+            dry_run=deps.dry_run,
+        )
+        if decision == PolicyDecision.DENY:
+            return f"DENIED: Tool '{tool.name}' is not permitted."
+        if decision == PolicyDecision.CONFIRM:
+            impact = build_impact_description(tool.name, kwargs or {}, registry)
+            return (
+                f"CONFIRMATION REQUIRED: {impact} "
+                "The user must confirm this operation before it can proceed. "
+                "Ask the user to confirm, or suggest they use /yes to enable auto-approve mode."
+            )
+
+    # --- Dry-run override ---
+    if deps.dry_run and "dry_run" in inspect.signature(tool.execute).parameters:
+        kwargs["dry_run"] = True
+
     try:
         executor = _get_executor(ctx)
         result = tool.execute(executor, **kwargs)
-        return _format_result(result)
+        formatted = _format_result(result)
+
+        # --- Audit logging (non-SAFE operations only) ---
+        if tool.security_level != SecurityLevel.SAFE and deps.memory is not None:
+            deps.memory.audit.log(
+                cluster=None,
+                namespace=kwargs.get("namespace"),
+                tool_name=tool.name,
+                args=kwargs,
+                result=formatted[:200],
+                success=True,
+            )
+
+        if deps.dry_run:
+            return f"[DRY-RUN] {formatted}"
+        return formatted
     except ConnectionError as e:
+        _audit_failure(tool, deps, kwargs, f"Cannot connect to cluster — {e}")
         return f"Error: Cannot connect to cluster — {e}"
     except RuntimeError as e:
+        _audit_failure(tool, deps, kwargs, str(e))
         return f"Error: {e}"
     except Exception as e:
+        _audit_failure(tool, deps, kwargs, str(e))
         return f"Unexpected error: {e}"
+
+
+def _audit_failure(tool: Any, deps: Any, kwargs: dict, error: str) -> None:
+    """Log a failed tool execution to audit."""
+    if tool.security_level != SecurityLevel.SAFE and deps.memory is not None:
+        deps.memory.audit.log(
+            cluster=None,
+            namespace=kwargs.get("namespace"),
+            tool_name=tool.name,
+            args=kwargs,
+            result=error[:200],
+            success=False,
+        )
 
 
 # ---------------------------------------------------------------------------

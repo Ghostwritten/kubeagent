@@ -298,3 +298,74 @@ class TestDepsMemoryField:
             assert deps.memory is not None
             mm.close()
 
+
+from unittest.mock import MagicMock
+
+from kubeagent.agent.deps import KubeAgentDeps
+
+
+class TestCallToolAuditIntegration:
+    def test_dangerous_tool_logs_audit_when_approved(self) -> None:
+        """When auto_approve=True, dangerous tool executes and logs to audit."""
+        from kubeagent.agent.agent import _call_tool
+        from kubeagent.tools.builtin.delete import DeleteResourceTool
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = MemoryConfig(db_path=str(Path(tmpdir) / "test.db"))
+            mm = MemoryManager(config)
+            ctx = MagicMock()
+            ctx.deps = KubeAgentDeps(
+                config=KubeAgentConfig(),
+                auto_approve=True,
+                memory=mm,
+            )
+            _call_tool(DeleteResourceTool, ctx, kind="pod", name="test", namespace="default")
+            entries = mm.audit.query()
+            assert len(entries) == 1
+            assert entries[0].tool_name == "delete_resource"
+            mm.close()
+
+    def test_safe_tool_no_audit(self) -> None:
+        """Safe tools should not produce audit entries."""
+        from kubeagent.agent.agent import _call_tool
+        from kubeagent.tools.builtin.pods import GetPodsTool
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = MemoryConfig(db_path=str(Path(tmpdir) / "test.db"))
+            mm = MemoryManager(config)
+            ctx = MagicMock()
+            ctx.deps = KubeAgentDeps(config=KubeAgentConfig(), memory=mm)
+            _call_tool(GetPodsTool, ctx, namespace="default")
+            entries = mm.audit.query()
+            assert len(entries) == 0
+            mm.close()
+
+    def test_no_memory_no_crash(self) -> None:
+        """When memory is None, tool should still work without audit."""
+        from kubeagent.agent.agent import _call_tool
+        from kubeagent.tools.builtin.pods import GetPodsTool
+
+        ctx = MagicMock()
+        ctx.deps = KubeAgentDeps(config=KubeAgentConfig(), memory=None)
+        result = _call_tool(GetPodsTool, ctx, namespace="default")
+        assert "DENIED" not in result
+
+
+from kubeagent.agent.prompt_engine import build_system_prompt
+
+
+class TestPromptEnginePreferences:
+    def test_prompt_includes_memory_preferences(self) -> None:
+        config = KubeAgentConfig()
+        prompt = build_system_prompt(
+            config,
+            memory_preferences="## User Preferences (from memory)\n- language: zh\n- output_style: yaml",
+        )
+        assert "language: zh" in prompt
+        assert "output_style: yaml" in prompt
+
+    def test_prompt_without_preferences(self) -> None:
+        config = KubeAgentConfig()
+        prompt = build_system_prompt(config)
+        assert "User Preferences (from memory)" not in prompt
+
