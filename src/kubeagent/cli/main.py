@@ -16,7 +16,10 @@ def cli(ctx: click.Context) -> None:
         if not config_exists():
             run_wizard()
         else:
-            click.echo("KubeAgent is ready. Use 'kubeagent --help' to see available commands.")
+            from kubeagent.cli.repl import KubeAgentREPL
+
+            repl = KubeAgentREPL()
+            repl.start()
 
 
 @cli.command()

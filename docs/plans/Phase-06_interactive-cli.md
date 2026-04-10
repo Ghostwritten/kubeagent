@@ -1,6 +1,6 @@
 # Phase 06 — Interactive CLI
 
-> Status: `pending`
+> Status: `completed`
 > Depends on: Phase 05
 > Master Plan: [00-master-plan.md](00-master-plan.md)
 
