@@ -30,3 +30,6 @@ htmlcov/
 
 # Superpowers
 .superpowers/
+
+# Worktrees
+.worktrees/
