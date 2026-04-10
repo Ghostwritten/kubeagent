@@ -107,3 +107,48 @@ class AuditLogger:
             else:
                 redacted[key] = value
         return redacted
+
+
+class PreferencesManager:
+    """Key-value store for user preferences."""
+
+    def __init__(self, storage: SQLiteStorage) -> None:
+        self._storage = storage
+
+    def set(self, key: str, value: str) -> None:
+        """Set a preference (insert or update)."""
+        self._storage.execute(
+            "INSERT INTO preferences (key, value, updated_at) VALUES (?, ?, datetime('now')) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')",
+            (key, value),
+        )
+
+    def get(self, key: str) -> str | None:
+        """Get a single preference value."""
+        row = self._storage.fetchone(
+            "SELECT value FROM preferences WHERE key = ?", (key,)
+        )
+        return row[0] if row else None
+
+    def get_all(self) -> dict[str, str]:
+        """Get all preferences as a dict."""
+        rows = self._storage.fetchall("SELECT key, value FROM preferences ORDER BY key")
+        return {row[0]: row[1] for row in rows}
+
+    def delete(self, key: str) -> None:
+        """Delete a single preference."""
+        self._storage.execute("DELETE FROM preferences WHERE key = ?", (key,))
+
+    def clear(self) -> None:
+        """Delete all preferences."""
+        self._storage.execute("DELETE FROM preferences")
+
+    def to_prompt_section(self) -> str:
+        """Format preferences as a system prompt section."""
+        prefs = self.get_all()
+        if not prefs:
+            return ""
+        lines = ["## User Preferences (from memory)"]
+        for key, value in prefs.items():
+            lines.append(f"- {key}: {value}")
+        return "\n".join(lines)

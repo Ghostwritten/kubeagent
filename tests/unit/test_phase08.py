@@ -82,7 +82,7 @@ class TestSQLiteStorage:
             storage2.close()
 
 
-from kubeagent.agent.memory import AuditEntry, AuditLogger
+from kubeagent.agent.memory import AuditEntry, AuditLogger, PreferencesManager
 
 
 class TestAuditLogger:
@@ -174,3 +174,73 @@ class TestAuditLogger:
             assert len(entries) == 1
             assert entries[0].tool_name == "new_tool"
             logger._storage.close()
+
+
+class TestPreferencesManager:
+    def _make_prefs(self, tmpdir: str) -> PreferencesManager:
+        storage = SQLiteStorage(Path(tmpdir) / "test.db")
+        return PreferencesManager(storage)
+
+    def test_set_and_get(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            prefs = self._make_prefs(tmpdir)
+            prefs.set("language", "zh")
+            assert prefs.get("language") == "zh"
+            prefs._storage.close()
+
+    def test_get_missing_returns_none(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            prefs = self._make_prefs(tmpdir)
+            assert prefs.get("nonexistent") is None
+            prefs._storage.close()
+
+    def test_set_overwrites(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            prefs = self._make_prefs(tmpdir)
+            prefs.set("style", "rich")
+            prefs.set("style", "markdown")
+            assert prefs.get("style") == "markdown"
+            prefs._storage.close()
+
+    def test_get_all(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            prefs = self._make_prefs(tmpdir)
+            prefs.set("a", "1")
+            prefs.set("b", "2")
+            all_prefs = prefs.get_all()
+            assert all_prefs == {"a": "1", "b": "2"}
+            prefs._storage.close()
+
+    def test_delete(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            prefs = self._make_prefs(tmpdir)
+            prefs.set("key", "value")
+            prefs.delete("key")
+            assert prefs.get("key") is None
+            prefs._storage.close()
+
+    def test_clear(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            prefs = self._make_prefs(tmpdir)
+            prefs.set("a", "1")
+            prefs.set("b", "2")
+            prefs.clear()
+            assert prefs.get_all() == {}
+            prefs._storage.close()
+
+    def test_to_prompt_section_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            prefs = self._make_prefs(tmpdir)
+            assert prefs.to_prompt_section() == ""
+            prefs._storage.close()
+
+    def test_to_prompt_section_with_data(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            prefs = self._make_prefs(tmpdir)
+            prefs.set("language", "zh")
+            prefs.set("output_style", "yaml")
+            section = prefs.to_prompt_section()
+            assert "language" in section
+            assert "zh" in section
+            assert "output_style" in section
+            prefs._storage.close()
