@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
+
 from kubeagent.config.settings import KubeAgentConfig, MemoryConfig
 
 
@@ -17,3 +20,63 @@ class TestMemoryConfig:
         config = KubeAgentConfig()
         assert hasattr(config, "memory")
         assert config.memory.enabled is True
+
+
+from kubeagent.infra.storage import SQLiteStorage
+
+
+class TestSQLiteStorage:
+    def test_create_db(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "test.db"
+            storage = SQLiteStorage(db_path)
+            assert db_path.exists()
+            storage.close()
+
+    def test_migration_creates_tables(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            storage = SQLiteStorage(Path(tmpdir) / "test.db")
+            tables = storage.fetchall(
+                "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+            )
+            table_names = [row[0] for row in tables]
+            assert "preferences" in table_names
+            assert "audit_log" in table_names
+            storage.close()
+
+    def test_user_version_set(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            storage = SQLiteStorage(Path(tmpdir) / "test.db")
+            version = storage.fetchone("PRAGMA user_version")
+            assert version is not None
+            assert version[0] == 1
+            storage.close()
+
+    def test_execute_and_fetch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            storage = SQLiteStorage(Path(tmpdir) / "test.db")
+            storage.execute(
+                "INSERT INTO preferences (key, value) VALUES (?, ?)",
+                ("test_key", "test_value"),
+            )
+            row = storage.fetchone("SELECT value FROM preferences WHERE key = ?", ("test_key",))
+            assert row is not None
+            assert row[0] == "test_value"
+            storage.close()
+
+    def test_fetchall_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            storage = SQLiteStorage(Path(tmpdir) / "test.db")
+            rows = storage.fetchall("SELECT * FROM preferences")
+            assert rows == []
+            storage.close()
+
+    def test_idempotent_migration(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "test.db"
+            storage = SQLiteStorage(db_path)
+            storage.close()
+            storage2 = SQLiteStorage(db_path)
+            version = storage2.fetchone("PRAGMA user_version")
+            assert version[0] == 1
+            storage2.close()
