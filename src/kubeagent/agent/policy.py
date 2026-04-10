@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
@@ -133,3 +134,83 @@ def needs_double_confirmation(tool_name: str, registry: ToolRegistry) -> bool:
     - delete_resource (for namespace-level deletions)
     """
     return tool_name in ("drain_node",)
+
+
+# ---------------------------------------------------------------------------
+# RBAC — Role-Based Access Control
+# ---------------------------------------------------------------------------
+
+
+
+class Role(StrEnum):
+    """User roles for RBAC."""
+
+    ADMIN = "admin"      # Full access
+    OPERATOR = "operator"  # Read/write, no cluster-admin
+    VIEWER = "viewer"    # Read-only
+
+
+@dataclass
+class PolicyRule:
+    """A single policy rule."""
+
+    action: str  # get | list | apply | delete | exec | admin
+    resource: str  # pod | deployment | service | node | * | ...
+    namespace: str | None = None  # specific namespace or None for all
+    allow: bool = True
+
+
+@dataclass
+class RBACPolicy:
+    """Role-based access control policy.
+
+    Attributes:
+        role: User's role (admin, operator, viewer)
+        protected_namespaces: Namespaces that operators/viewers cannot modify
+        rules: Custom policy rules (override defaults)
+    """
+
+    role: Role = Role.OPERATOR
+    protected_namespaces: list[str] = field(
+        default_factory=lambda: ["kube-system", "kube-public"]
+    )
+    rules: list[PolicyRule] = field(default_factory=list)
+
+    def can_get(self, resource: str, namespace: str) -> bool:
+        """Check if user can get/list a resource."""
+        if self.role in (Role.ADMIN, Role.OPERATOR, Role.VIEWER):
+            return True
+        return False
+
+    def can_apply(self, resource: str, namespace: str) -> bool:
+        """Check if user can apply (create/update) a resource."""
+        if self.role == Role.ADMIN:
+            return True
+        if self.role == Role.VIEWER:
+            return False
+        # OPERATOR: allow but protect critical namespaces
+        if self.role == Role.OPERATOR:
+            if namespace in self.protected_namespaces:
+                return False
+        return True
+
+    def can_delete(self, resource: str, namespace: str) -> bool:
+        """Check if user can delete a resource."""
+        if self.role == Role.ADMIN:
+            return True
+        if self.role == Role.VIEWER:
+            return False
+        # OPERATOR: no delete in protected namespaces
+        if self.role == Role.OPERATOR:
+            if namespace in self.protected_namespaces:
+                return False
+        return True
+
+    def can_exec(self, resource: str, namespace: str) -> bool:
+        """Check if user can exec into pods."""
+        if self.role == Role.ADMIN:
+            return True
+        if self.role == Role.VIEWER:
+            return False
+        return True
+
