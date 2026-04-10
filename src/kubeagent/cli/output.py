@@ -101,7 +101,6 @@ def render_confirmation_hint(impact: str) -> None:
 
 def render_audit_table(entries: list) -> None:
     """Render audit log entries as a Rich table."""
-    from kubeagent.agent.memory import AuditEntry
 
     table = Table(title="Audit Log")
     table.add_column("ID", style="dim")

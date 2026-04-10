@@ -11,7 +11,7 @@ from pydantic_ai import Agent, RunContext
 
 from kubeagent.agent.deps import KubeAgentDeps
 from kubeagent.agent.model import get_agent_model
-from kubeagent.agent.policy import build_impact_description, check_policy, PolicyDecision
+from kubeagent.agent.policy import PolicyDecision, build_impact_description, check_policy
 from kubeagent.agent.prompts import SYSTEM_PROMPT
 from kubeagent.config.settings import KubeAgentConfig, load_config
 from kubeagent.infra.executor import PythonClientExecutor, SecurityLevel
