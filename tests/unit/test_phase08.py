@@ -369,3 +369,66 @@ class TestPromptEnginePreferences:
         prompt = build_system_prompt(config)
         assert "User Preferences (from memory)" not in prompt
 
+
+import hashlib
+
+
+class TestREPLMemoryCommands:
+    def _make_repl(self, tmpdir: str):
+        from kubeagent.cli.repl import KubeAgentREPL
+
+        config = KubeAgentConfig(
+            memory=MemoryConfig(db_path=str(Path(tmpdir) / "test.db"))
+        )
+        repl = KubeAgentREPL(config)
+        repl._init_memory()
+        return repl
+
+    def test_remember_stores_preference(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repl = self._make_repl(tmpdir)
+            repl._handle_command("/remember I prefer YAML output")
+            prefs = repl._memory.preferences.get_all()
+            assert len(prefs) == 1
+            assert "I prefer YAML output" in list(prefs.values())[0]
+            repl._memory.close()
+
+    def test_forget_deletes_preference(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repl = self._make_repl(tmpdir)
+            repl._handle_command("/remember I prefer YAML output")
+            prefs = repl._memory.preferences.get_all()
+            key = list(prefs.keys())[0]
+            repl._handle_command(f"/forget {key}")
+            assert repl._memory.preferences.get(key) is None
+            repl._memory.close()
+
+    def test_preferences_lists_all(self, capsys) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repl = self._make_repl(tmpdir)
+            repl._handle_command("/remember test pref one")
+            repl._handle_command("/remember test pref two")
+            repl._handle_command("/preferences")
+            # Should not raise
+            repl._memory.close()
+
+
+class TestRenderAuditTable:
+    def test_render_no_crash(self) -> None:
+        from kubeagent.cli.output import render_audit_table
+
+        entries = [
+            AuditEntry(
+                id=1,
+                timestamp="2026-04-10 12:00:00",
+                cluster="prod",
+                namespace="default",
+                tool_name="delete_resource",
+                args='{"kind": "pod"}',
+                result="deleted",
+                success=True,
+            )
+        ]
+        # Should not raise
+        render_audit_table(entries)
+

@@ -65,7 +65,7 @@ def render_welcome(version: str, cluster: str | None = None) -> None:
         console.print(f"Cluster: [{STYLE_CLUSTER}]{cluster}[/{STYLE_CLUSTER}]")
     console.print()
     console.print("[dim]Type your question in natural language.[/dim]")
-    console.print("[dim]Commands: /help, /clear, /exit[/dim]")
+    console.print("[dim]Commands: /help, /clear, /exit, /yes, /dryrun[/dim]")
     console.print("[dim]Shell: !<command> to run shell commands[/dim]")
     console.print()
 
@@ -80,11 +80,61 @@ def render_help() -> None:
     console.print("  [cyan]/exit[/cyan]     Exit KubeAgent (or Ctrl+D)")
     console.print("  [cyan]/model[/cyan]    Show current model")
     console.print("  [cyan]/cluster[/cyan]  Show current cluster info")
+    console.print("  [cyan]/yes[/cyan]      Toggle auto-approve (skip confirmations)")
+    console.print("  [cyan]/dryrun[/cyan]   Toggle dry-run mode (preview only)")
+    console.print("  [cyan]/audit[/cyan]    Show recent operations audit log")
+    console.print("  [cyan]/remember[/cyan] Save a preference (e.g., /remember I prefer YAML)")
+    console.print("  [cyan]/forget[/cyan]   Delete a preference by key")
+    console.print("  [cyan]/preferences[/cyan] List all saved preferences")
     console.print()
     console.print("[dim]Shell commands: prefix with ![/dim]")
     console.print("[dim]  !kubectl get pods[/dim]")
     console.print("[dim]  !ps aux | grep kube[/dim]")
     console.print()
+
+
+def render_confirmation_hint(impact: str) -> None:
+    """Render a confirmation hint when a tool is blocked by policy."""
+    console.print(f"[{STYLE_WARNING}]Confirmation required:[/{STYLE_WARNING}] {impact}")
+    console.print("[dim]Use /yes to toggle auto-approve, or /dryrun for preview mode.[/dim]")
+
+
+def render_audit_table(entries: list) -> None:
+    """Render audit log entries as a Rich table."""
+    from kubeagent.agent.memory import AuditEntry
+
+    table = Table(title="Audit Log")
+    table.add_column("ID", style="dim")
+    table.add_column("Timestamp")
+    table.add_column("Tool", style="cyan")
+    table.add_column("Namespace")
+    table.add_column("Result")
+    table.add_column("OK", justify="center")
+
+    for entry in entries:
+        ok = "[green]Y[/green]" if entry.success else "[red]N[/red]"
+        table.add_row(
+            str(entry.id),
+            entry.timestamp,
+            entry.tool_name,
+            entry.namespace or "-",
+            (entry.result or "")[:40],
+            ok,
+        )
+    console.print(table)
+
+
+def render_preferences(prefs: dict[str, str]) -> None:
+    """Render user preferences."""
+    if not prefs:
+        console.print("[dim]No saved preferences.[/dim]")
+        return
+    table = Table(title="Preferences")
+    table.add_column("Key", style="cyan")
+    table.add_column("Value")
+    for key, value in prefs.items():
+        table.add_row(key, value)
+    console.print(table)
 
 
 def render_spinner(message: str = "Thinking...") -> Any:
