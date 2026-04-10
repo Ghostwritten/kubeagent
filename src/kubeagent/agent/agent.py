@@ -153,6 +153,15 @@ class KubectlApplyFileInput(BaseModel):
     namespace: str = Field(default="default", description="Target namespace.")
 
 
+class DiagnoseIssueInput(BaseModel):
+    """Input for diagnose_issue — parallel SubAgent diagnostic."""
+
+    query: str = Field(
+        description="The diagnostic question (e.g., 'Why is the payment-service crashing?')."
+    )
+    namespace: str = Field(default="default", description="Target namespace.")
+
+
 # ---------------------------------------------------------------------------
 # Agent creation
 # ---------------------------------------------------------------------------
@@ -378,6 +387,64 @@ def _register_read_tools(agent: Agent[KubeAgentDeps, str]) -> None:
             container=input_data.container,
             tail_lines=input_data.tail_lines,
         )
+
+    @agent.tool(retries=1)
+    async def diagnose_issue(ctx: RunContext[KubeAgentDeps], input_data: DiagnoseIssueInput) -> str:
+        """Diagnose a complex cluster issue using parallel SubAgents.
+
+        Creates specialized SubAgents for different diagnostic angles:
+        - Pod status and recent events
+        - Logs and crash information
+        - Resource usage and scheduling
+
+        Use this for multi-faceted questions like 'Why is X crashing?'
+        or 'Diagnose the payment service'.
+        """
+        from kubeagent.agent.subagent import SubAgentConfig, SubAgentDispatcher, SubAgentFactory
+        from kubeagent.infra.model_router import get_router
+
+        router = get_router(ctx.deps.config.model)
+        subagent_model = router.select_model_for_subagent(input_data.query, [])
+        factory = SubAgentFactory(config=ctx.deps.config.model)
+        dispatcher = SubAgentDispatcher(factory)
+
+        # Use router-selected model for all SubAgents
+        subagents = [
+            SubAgentConfig(
+                task=f"Check pod status and events in namespace {input_data.namespace}",
+                tools=["get_pods", "get_events"],
+                model=subagent_model,
+                context={"namespace": input_data.namespace},
+            ),
+            SubAgentConfig(
+                task=f"Check node status for pods in namespace {input_data.namespace}",
+                tools=["get_nodes", "get_pods"],
+                model=subagent_model,
+                context={"namespace": input_data.namespace},
+            ),
+        ]
+
+        results = await dispatcher.dispatch(subagents, timeout=60)
+        synthesis = dispatcher.synthesize(results, main_task=input_data.query)
+        return synthesis
+        dispatcher = SubAgentDispatcher(factory)
+
+        subagents = [
+            SubAgentConfig(
+                task=f"Check pod status and events in namespace {input_data.namespace}",
+                tools=["get_pods", "get_events"],
+                context={"namespace": input_data.namespace},
+            ),
+            SubAgentConfig(
+                task=f"Check node status for pods in namespace {input_data.namespace}",
+                tools=["get_nodes", "get_pods"],
+                context={"namespace": input_data.namespace},
+            ),
+        ]
+
+        results = await dispatcher.dispatch(subagents, timeout=60)
+        synthesis = dispatcher.synthesize(results, main_task=input_data.query)
+        return synthesis
 
 
 # ---------------------------------------------------------------------------
