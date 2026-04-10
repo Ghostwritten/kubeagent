@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
+from kubeagent.config.settings import MemoryConfig
 from kubeagent.infra.storage import SQLiteStorage
 
 # Keys whose values should be redacted in audit logs
@@ -152,9 +153,6 @@ class PreferencesManager:
         for key, value in prefs.items():
             lines.append(f"- {key}: {value}")
         return "\n".join(lines)
-
-
-from kubeagent.config.settings import MemoryConfig
 
 
 class MemoryManager:
