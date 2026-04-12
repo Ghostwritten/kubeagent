@@ -1,6 +1,6 @@
 # KubeAgent Master Plan
 
-> Last Updated: 2026-04-10
+> Last Updated: 2026-04-12
 > Design Spec: [../specs/2026-04-09-kubeagent-design.md](../specs/2026-04-09-kubeagent-design.md)
 
 ---
@@ -30,8 +30,8 @@
 | 08 | Memory System | `completed` | [Phase-08_memory-system.md](Phase-08_memory-system.md) |
 | 09 | SubAgent + Model Router | `completed` | [Phase-09_subagent-model-router.md](Phase-09_subagent-model-router.md) |
 | 10 | Skill + Hook + Headless | `completed` | [Phase-10_skill-hook-headless.md](Phase-10_skill-hook-headless.md) |
-| 11 | Plugin System | `pending` | [Phase-11_plugin-system.md](Phase-11_plugin-system.md) |
-| 12 | MCP Server + Ecosystem | `pending` | [Phase-12_mcp-server-ecosystem.md](Phase-12_mcp-server-ecosystem.md) |
+| 11 | Plugin System | `completed` | [Phase-11_plugin-system.md](Phase-11_plugin-system.md) |
+| 12 | MCP Server + Ecosystem | `completed` | [Phase-12_mcp-server-ecosystem.md](Phase-12_mcp-server-ecosystem.md) |
 
 ---
 
@@ -41,7 +41,7 @@
 |-----------|-------------|------------|
 | **MVP Alpha** | Phase 07 | Conversational CLI that manages K8s clusters with safety controls |
 | **MVP Beta** ✅ | Phase 10 | Professional diagnostics, automation, headless mode |
-| **v1.0** | Phase 12 | Full platform with plugin ecosystem and MCP support |
+| **v1.0** ✅ | Phase 12 | Full platform with plugin ecosystem and MCP support |
 
 ---
 

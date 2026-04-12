@@ -1,6 +1,6 @@
 # Phase 12 — MCP Server + Ecosystem
 
-> Status: `pending`
+> Status: `completed`
 > Depends on: Phase 11
 > Master Plan: [00-master-plan.md](00-master-plan.md)
 
@@ -14,39 +14,39 @@ Expose KubeAgent as an MCP (Model Context Protocol) server and integrate with ma
 
 ## Tasks
 
-- [ ] **T1: MCP Server implementation**
+- [x] **T1: MCP Server implementation**
   - Implement MCP protocol server
   - Expose all KubeAgent tools as MCP tools
   - Expose skills as MCP resources
   - Authentication and authorization for MCP clients
 
-- [ ] **T2: MCP Server lifecycle**
+- [x] **T2: MCP Server lifecycle**
   - `kubeagent mcp start` — start MCP server
   - `kubeagent mcp stop` — stop MCP server
   - `kubeagent mcp status` — show server status
   - Server runs as background daemon
 
-- [ ] **T3: Helm plugin**
+- [x] **T3: Helm plugin**
   - Tools: `helm_list`, `helm_install`, `helm_upgrade`, `helm_rollback`, `helm_uninstall`
   - Skills: `/helm-deploy`, `/helm-diagnose`
   - Integration with existing Helm CLI
 
-- [ ] **T4: Istio plugin**
+- [x] **T4: Istio plugin**
   - Tools: `istio_analyze`, `istio_proxy_status`, `istio_config`
   - Skills: `/istio-diagnose`, `/istio-security-audit`
   - Service mesh topology visualization
 
-- [ ] **T5: ArgoCD plugin**
+- [x] **T5: ArgoCD plugin**
   - Tools: `argocd_app_list`, `argocd_app_sync`, `argocd_app_status`
   - Skills: `/argocd-deploy`, `/argocd-rollback`
   - GitOps workflow integration
 
-- [ ] **T6: Observability plugins**
+- [x] **T6: Observability plugins**
   - Prometheus: query metrics, alert status
   - Grafana: dashboard links, snapshot creation
   - Integration with cluster monitoring
 
-- [ ] **T7: Documentation and examples**
+- [x] **T7: Documentation and examples**
   - MCP client examples (Claude Code, Cursor)
   - Plugin development guide
   - Ecosystem integration tutorials

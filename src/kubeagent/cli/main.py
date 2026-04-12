@@ -119,6 +119,12 @@ def switch(context_name: str) -> None:
         click.echo(f"Failed to switch to context '{ctx.name}'.")
 
 
+# Register MCP subcommands
+from kubeagent.mcp.cli import mcp_group
+
+cli.add_command(mcp_group)
+
+
 @cli.command(name="cluster-info")
 def cluster_info() -> None:
     """Show detailed information about the current cluster."""
