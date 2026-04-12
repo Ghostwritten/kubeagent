@@ -1,0 +1,17 @@
+.git
+.github
+.venv
+.pytest_cache
+.ruff_cache
+__pycache__
+*.pyc
+*.pyo
+tests/
+docs/
+homebrew/
+*.egg-info
+dist/
+build/
+.env
+*.md
+!README.md
