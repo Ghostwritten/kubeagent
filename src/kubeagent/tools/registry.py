@@ -13,12 +13,22 @@ class ToolRegistry:
         self._tools: dict[str, type[BaseTool]] = {}
 
     def register(self, tool_class: type[BaseTool]) -> None:
-        """Register a tool class."""
-        instance = tool_class()
-        if not instance.name:
-            msg = f"Tool {tool_class.__name__} has no name"
-            raise ValueError(msg)
-        self._tools[instance.name] = tool_class
+        """Register a tool class or instance.
+
+        Accepts either a class (type) or an already-instantiated tool.
+        """
+        if isinstance(tool_class, BaseTool):
+            # Already an instance — wrap it in a factory lambda
+            instance = tool_class
+            if not instance.name:
+                raise ValueError(f"Tool has no name")
+            self._tools[instance.name] = lambda: instance  # type: ignore[assignment]
+        else:
+            instance = tool_class()
+            if not instance.name:
+                msg = f"Tool {tool_class.__name__} has no name"
+                raise ValueError(msg)
+            self._tools[instance.name] = tool_class
 
     def get(self, name: str) -> type[BaseTool] | None:
         """Get a tool class by name."""

@@ -1,6 +1,6 @@
 # Phase 11 — Plugin System
 
-> Status: `pending`
+> Status: `completed`
 > Depends on: Phase 10
 > Master Plan: [00-master-plan.md](00-master-plan.md)
 
@@ -14,30 +14,30 @@ Create the plugin system that allows third-party extensions: tool plugins, skill
 
 ## Tasks
 
-- [ ] **T1: Plugin interface specification**
+- [x] **T1: Plugin interface specification**
   - Plugin manifest format: `plugin.yaml` with metadata
   - Plugin types: tool, skill, policy
   - Plugin entry points via Python package structure
   - Version compatibility declaration
 
-- [ ] **T2: Plugin lifecycle management**
+- [x] **T2: Plugin lifecycle management**
   - `kubeagent plugin install <name>` — install from PyPI or URL
   - `kubeagent plugin list` — show installed plugins
   - `kubeagent plugin update <name>` — update plugin
   - `kubeagent plugin remove <name>` — uninstall plugin
   - Plugin directory: `~/.kubeagent/plugins/`
 
-- [ ] **T3: Plugin sandboxing**
+- [x] **T3: Plugin sandboxing**
   - Declared permissions: which tools, which clusters, which namespaces
   - Plugin cannot access more than declared
   - Audit log for plugin operations
 
-- [ ] **T4: User-defined tool registration**
+- [x] **T4: User-defined tool registration**
   - User can register custom tools via config
   - Tool can be: Python function, shell script, kubectl plugin
   - Tool metadata: name, description, parameters, security level
 
-- [ ] **T5: Community skill contribution**
+- [x] **T5: Community skill contribution**
   - Skill contribution workflow documentation
   - Skill review guidelines
   - Skill versioning and compatibility
