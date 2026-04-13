@@ -118,7 +118,10 @@ jobs:
           pyinstaller --onefile
           --name "${{ matrix.artifact }}"
           --collect-all kubeagent
+          --collect-all fastmcp
           --exclude-module logfire
+          --copy-metadata fastmcp
+          --copy-metadata mcp
           src/kubeagent/__main__.py
 
       - name: Smoke test (Unix)
