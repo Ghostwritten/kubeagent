@@ -2,11 +2,41 @@
 
 from __future__ import annotations
 
-import json
 from unittest.mock import MagicMock, patch
 
-import pytest
-
+from kubeagent.mcp.ecosystem.argocd import (
+    ARGOCD_TOOLS,
+    ArgoCDAppGetTool,
+    ArgoCDAppListTool,
+    ArgoCDAppRollbackTool,
+    ArgoCDAppSyncTool,
+)
+from kubeagent.mcp.ecosystem.grafana import (
+    GRAFANA_TOOLS,
+    GrafanaAnnotationCreateTool,
+    GrafanaDashboardGetTool,
+    GrafanaDashboardListTool,
+)
+from kubeagent.mcp.ecosystem.helm import (
+    HELM_TOOLS,
+    HelmHistoryTool,
+    HelmInstallTool,
+    HelmListTool,
+    HelmRollbackTool,
+    HelmStatusTool,
+    HelmUninstallTool,
+    HelmUpgradeTool,
+)
+from kubeagent.mcp.ecosystem.istio import (
+    ISTIO_TOOLS,
+    IstioAnalyzeTool,
+    IstioProxyConfigTool,
+)
+from kubeagent.mcp.ecosystem.prometheus import (
+    PROMETHEUS_TOOLS,
+    PrometheusQueryRangeTool,
+    PrometheusQueryTool,
+)
 
 # ---------------------------------------------------------------------------
 # T1: MCP Server
@@ -103,17 +133,6 @@ class TestMCPCLI:
 # T3: Helm Ecosystem Plugin
 # ---------------------------------------------------------------------------
 
-from kubeagent.mcp.ecosystem.helm import (
-    HELM_TOOLS,
-    HelmHistoryTool,
-    HelmInstallTool,
-    HelmListTool,
-    HelmRollbackTool,
-    HelmStatusTool,
-    HelmUninstallTool,
-    HelmUpgradeTool,
-)
-
 
 class TestHelmTools:
     def test_helm_tools_count(self) -> None:
@@ -190,14 +209,6 @@ class TestHelmTools:
 # T4: Istio Ecosystem Plugin
 # ---------------------------------------------------------------------------
 
-from kubeagent.mcp.ecosystem.istio import (
-    ISTIO_TOOLS,
-    IstioAnalyzeTool,
-    IstioProxyConfigTool,
-    IstioProxyStatusTool,
-    IstioVersionTool,
-)
-
 
 class TestIstioTools:
     def test_istio_tools_count(self) -> None:
@@ -226,16 +237,6 @@ class TestIstioTools:
 # ---------------------------------------------------------------------------
 # T5: ArgoCD Ecosystem Plugin
 # ---------------------------------------------------------------------------
-
-from kubeagent.mcp.ecosystem.argocd import (
-    ARGOCD_TOOLS,
-    ArgoCDAppGetTool,
-    ArgoCDAppHistoryTool,
-    ArgoCDAppListTool,
-    ArgoCDAppRollbackTool,
-    ArgoCDAppStatusTool,
-    ArgoCDAppSyncTool,
-)
 
 
 class TestArgoCDTools:
@@ -281,20 +282,6 @@ class TestArgoCDTools:
 # ---------------------------------------------------------------------------
 # T6: Observability Plugins
 # ---------------------------------------------------------------------------
-
-from kubeagent.mcp.ecosystem.prometheus import (
-    PROMETHEUS_TOOLS,
-    PrometheusAlertsTool,
-    PrometheusQueryRangeTool,
-    PrometheusQueryTool,
-    PrometheusTargetsTool,
-)
-from kubeagent.mcp.ecosystem.grafana import (
-    GRAFANA_TOOLS,
-    GrafanaAnnotationCreateTool,
-    GrafanaDashboardGetTool,
-    GrafanaDashboardListTool,
-)
 
 
 class TestPrometheusTools:
@@ -372,7 +359,9 @@ class TestGrafanaTools:
         """GrafanaDashboardListTool calls Grafana API."""
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=lambda: [{"title": "My Dashboard", "uid": "abc", "url": "/d/abc", "tags": []}],
+            json=lambda: [
+                {"title": "My Dashboard", "uid": "abc", "url": "/d/abc", "tags": []}
+            ],
         )
         mock_get.return_value.raise_for_status = lambda: None
         tool = GrafanaDashboardListTool()
@@ -414,13 +403,13 @@ class TestAcceptanceCriteria:
         assert isinstance(result, (list, dict))
 
     def test_ac4_istio_plugin_functional(self) -> None:
-        """AC4: Istio plugin can analyze (returns error gracefully if istioctl not installed)."""
+        """AC4: Istio plugin can analyze (returns error gracefully if not installed)."""
         tool = IstioAnalyzeTool()
         result = tool.execute()
         assert isinstance(result, dict)
 
     def test_ac5_argocd_plugin_functional(self) -> None:
-        """AC5: ArgoCD plugin can list (returns error gracefully if argocd not installed)."""
+        """AC5: ArgoCD plugin can list (returns error gracefully if not installed)."""
         tool = ArgoCDAppListTool()
         result = tool.execute()
         assert isinstance(result, dict)
@@ -429,7 +418,9 @@ class TestAcceptanceCriteria:
         """All ecosystem tools are BaseTool subclasses with proper metadata."""
         from kubeagent.tools.base import BaseTool
 
-        all_tools = HELM_TOOLS + ISTIO_TOOLS + ARGOCD_TOOLS + PROMETHEUS_TOOLS + GRAFANA_TOOLS
+        all_tools = (
+            HELM_TOOLS + ISTIO_TOOLS + ARGOCD_TOOLS + PROMETHEUS_TOOLS + GRAFANA_TOOLS
+        )
         assert len(all_tools) == 24
         for tool_cls in all_tools:
             instance = tool_cls()

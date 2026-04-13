@@ -9,8 +9,6 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-import yaml
-
 from kubeagent.plugins.manager import PluginManager
 
 
@@ -45,7 +43,8 @@ def run_plugin_command(
             return _plugin_list(plugins_dir)
         elif cmd == "install":
             if len(args) < 2:
-                return CLIResult(exit_code=1, output="Usage: kubeagent plugin install <package-or-url>")
+                msg = "Usage: kubeagent plugin install <package-or-url>"
+                return CLIResult(exit_code=1, output=msg)
             return _plugin_install(args[1], plugins_dir)
         elif cmd == "remove":
             if len(args) < 2:
@@ -73,7 +72,8 @@ def _plugin_list(plugins_dir: Path | None = None) -> CLIResult:
     for name in plugins:
         p = mgr.get_plugin(name)
         if p:
-            lines.append(f"  {p.manifest.name} {p.manifest.version} ({p.manifest.type.value}) [{p.state.value}]")
+            m = p.manifest
+            lines.append(f"  {m.name} {m.version} ({m.type.value}) [{p.state.value}]")
         else:
             lines.append(f"  {name}")
 

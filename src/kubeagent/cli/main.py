@@ -5,6 +5,7 @@ import click
 from kubeagent import __version__
 from kubeagent.cli.setup_wizard import run_doctor, run_wizard
 from kubeagent.config.settings import config_exists
+from kubeagent.mcp.cli import mcp_group
 
 
 @click.group(invoke_without_command=True)
@@ -120,8 +121,6 @@ def switch(context_name: str) -> None:
 
 
 # Register MCP subcommands
-from kubeagent.mcp.cli import mcp_group
-
 cli.add_command(mcp_group)
 
 

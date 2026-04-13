@@ -7,12 +7,15 @@ from pathlib import Path
 
 import yaml
 
+from kubeagent.plugins.cli import run_plugin_command
+from kubeagent.plugins.interface import PluginManifest, PluginType
+from kubeagent.plugins.manager import PluginManager, PluginState
+from kubeagent.plugins.sandbox import PluginPermissions, PluginSandbox
+from kubeagent.plugins.user_tools import ShellTool, register_user_tool
 
 # ---------------------------------------------------------------------------
 # T1: Plugin Interface
 # ---------------------------------------------------------------------------
-
-from kubeagent.plugins.interface import PluginType, PluginManifest, PluginInterface
 
 
 class TestPluginManifest:
@@ -53,8 +56,6 @@ class TestPluginManifest:
 # ---------------------------------------------------------------------------
 # T2: Plugin Registry + Lifecycle
 # ---------------------------------------------------------------------------
-
-from kubeagent.plugins.manager import PluginManager, PluginState
 
 
 class TestPluginManager:
@@ -113,8 +114,6 @@ class TestPluginManager:
 # T3: Plugin Sandboxing + Permissions
 # ---------------------------------------------------------------------------
 
-from kubeagent.plugins.sandbox import PluginSandbox, PluginPermissions
-
 
 class TestPluginPermissions:
     def test_allows_matching_tool(self) -> None:
@@ -172,8 +171,6 @@ class TestPluginSandbox:
 # T4: User-Defined Tool Registration
 # ---------------------------------------------------------------------------
 
-from kubeagent.plugins.user_tools import ShellTool, register_user_tool
-
 
 class TestShellTool:
     def test_shell_tool_executes(self) -> None:
@@ -206,8 +203,6 @@ class TestShellTool:
 # T5: Plugin CLI + Community Skills
 # ---------------------------------------------------------------------------
 
-from kubeagent.plugins.cli import run_plugin_command
-
 
 class TestPluginCLI:
     def test_plugin_list_command(self) -> None:
@@ -218,7 +213,10 @@ class TestPluginCLI:
 
     def test_plugin_install_unknown_package(self) -> None:
         """plugin install with unknown package shows helpful error."""
-        result = run_plugin_command(["install", "nonexistent-package-xyz"], plugins_dir=Path(tempfile.gettempdir()))
+        result = run_plugin_command(
+            ["install", "nonexistent-package-xyz"],
+            plugins_dir=Path(tempfile.gettempdir()),
+        )
         # Should not crash; exit code depends on whether package exists
         assert result.exit_code in (0, 1)
 
@@ -226,6 +224,7 @@ class TestPluginCLI:
 # ---------------------------------------------------------------------------
 # Acceptance Criteria Tests
 # ---------------------------------------------------------------------------
+
 
 class TestAcceptanceCriteria:
     def test_plugin_loads_and_registers_tools(self) -> None:

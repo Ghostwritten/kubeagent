@@ -53,7 +53,7 @@ class PluginManifest:
     min_kubeagent_version: str = "0.1.0"
 
     @classmethod
-    def from_file(cls, path: Path) -> "PluginManifest":
+    def from_file(cls, path: Path) -> PluginManifest:
         """Load manifest from a plugin.yaml file."""
         data = yaml.safe_load(path.read_text()) or {}
         perms_data = data.pop("permissions", {})

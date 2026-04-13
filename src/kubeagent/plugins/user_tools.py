@@ -6,6 +6,7 @@ import subprocess
 from dataclasses import dataclass, field
 
 from kubeagent.infra.executor import SecurityLevel
+from kubeagent.plugins.interface import PluginPermissions
 from kubeagent.plugins.sandbox import PluginSandbox
 from kubeagent.tools.base import BaseTool
 
@@ -101,7 +102,7 @@ class PythonFunctionTool(BaseTool):
         args_schema: list[ToolArg] | None = None,
         description: str = "",
         security_level: SecurityLevel = SecurityLevel.SENSITIVE,
-        permissions: "PluginPermissions | None" = None,
+        permissions: PluginPermissions | None = None,
     ) -> None:
         self.name = name
         self.description = description

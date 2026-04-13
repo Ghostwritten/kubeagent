@@ -8,7 +8,7 @@ from typing import Any
 
 from fastmcp import FastMCP
 
-from kubeagent.infra.executor import PythonClientExecutor, SecurityLevel
+from kubeagent.infra.executor import PythonClientExecutor
 from kubeagent.skills.registry import SkillRegistry
 from kubeagent.tools.base import BaseTool
 from kubeagent.tools.registry import get_registry

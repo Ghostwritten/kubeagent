@@ -21,7 +21,7 @@ class ToolRegistry:
             # Already an instance — wrap it in a factory lambda
             instance = tool_class
             if not instance.name:
-                raise ValueError(f"Tool has no name")
+                raise ValueError("Tool has no name")
             self._tools[instance.name] = lambda: instance  # type: ignore[assignment]
         else:
             instance = tool_class()
