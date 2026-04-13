@@ -3,7 +3,7 @@ class Kubeagent < Formula
 
   desc "Natural language CLI for Kubernetes cluster management"
   homepage "https://github.com/Ghostwritten/kubeagent"
-  url "https://pypi.io/packages/source/k/kubeagent/kubeagent-VERSION.tar.gz"
+  url "https://pypi.io/packages/source/k/kubeagent-cli/kubeagent_cli-VERSION.tar.gz"
   sha256 "PLACEHOLDER_SHA256"
   license "MIT"
 

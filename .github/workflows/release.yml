@@ -80,8 +80,60 @@ jobs:
             ghostwritten/kubeagent:${{ steps.version.outputs.minor }}
             ghostwritten/kubeagent:${{ steps.version.outputs.major }}
 
-  github-release:
+  build-binaries:
     needs: test
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: kubeagent-linux-x86_64
+            ext: ""
+          - os: ubuntu-24.04-arm
+            artifact: kubeagent-linux-arm64
+            ext: ""
+          - os: macos-13
+            artifact: kubeagent-darwin-x86_64
+            ext: ""
+          - os: macos-latest
+            artifact: kubeagent-darwin-arm64
+            ext: ""
+          - os: windows-latest
+            artifact: kubeagent-windows-x86_64
+            ext: ".exe"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          pip install -e .
+
+      - name: Build binary
+        run: >
+          pyinstaller --onefile
+          --name "${{ matrix.artifact }}"
+          --collect-all kubeagent
+          src/kubeagent/__main__.py
+
+      - name: Smoke test (Unix)
+        if: runner.os != 'Windows'
+        run: ./dist/${{ matrix.artifact }} --version
+
+      - name: Smoke test (Windows)
+        if: runner.os == 'Windows'
+        run: ./dist/${{ matrix.artifact }}.exe --version
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}${{ matrix.ext }}
+
+  github-release:
+    needs: [test, build-binaries]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -92,6 +144,12 @@ jobs:
           python-version: "3.12"
       - run: pip install build
       - run: python -m build
+
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: binaries/
+          merge-multiple: true
 
       - name: Generate changelog
         id: changelog
@@ -119,7 +177,18 @@ jobs:
             # or
             docker pull ghcr.io/ghostwritten/kubeagent:${{ github.ref_name }}
             ```
-          files: dist/*
+
+            ## Binary Downloads
+            | Platform | Architecture | Download |
+            |----------|-------------|----------|
+            | Linux | x86_64 | `kubeagent-linux-x86_64` |
+            | Linux | arm64 | `kubeagent-linux-arm64` |
+            | macOS | Apple Silicon | `kubeagent-darwin-arm64` |
+            | macOS | Intel | `kubeagent-darwin-x86_64` |
+            | Windows | x86_64 | `kubeagent-windows-x86_64.exe` |
+          files: |
+            dist/*
+            binaries/*
 
   update-homebrew:
     needs: publish-pypi
