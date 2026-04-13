@@ -1,6 +1,6 @@
 [project]
 name = "kubeagent"
-version = "0.1.0"
+version = "1.0.0"
 description = "A natural language CLI agent for Kubernetes cluster management"
 readme = "README.md"
 license = { text = "MIT" }
