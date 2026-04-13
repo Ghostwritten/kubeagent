@@ -164,7 +164,9 @@ class TestCLISmoke:
         runner = CliRunner()
         result = runner.invoke(cli, ["--version"])
         assert result.exit_code == 0
-        assert "0.1.0" in result.output
+        from kubeagent import __version__
+
+        assert __version__ in result.output
 
     def test_cli_help_still_works(self) -> None:
         from click.testing import CliRunner

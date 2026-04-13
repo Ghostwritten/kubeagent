@@ -2,6 +2,7 @@
 
 from click.testing import CliRunner
 
+from kubeagent import __version__
 from kubeagent.cli.main import cli
 
 
@@ -10,7 +11,7 @@ def test_cli_version() -> None:
     runner = CliRunner()
     result = runner.invoke(cli, ["--version"])
     assert result.exit_code == 0
-    assert "0.1.0" in result.output
+    assert __version__ in result.output
 
 
 def test_cli_help() -> None:
@@ -29,7 +30,7 @@ def test_cli_info() -> None:
     runner = CliRunner()
     result = runner.invoke(cli, ["info"])
     assert result.exit_code == 0
-    assert "0.1.0" in result.output
+    assert __version__ in result.output
 
 
 def test_cli_init_help() -> None:
