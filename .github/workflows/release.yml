@@ -32,6 +32,7 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true
 
   publish-docker:
     needs: test
@@ -117,6 +118,7 @@ jobs:
           pyinstaller --onefile
           --name "${{ matrix.artifact }}"
           --collect-all kubeagent
+          --exclude-module logfire
           src/kubeagent/__main__.py
 
       - name: Smoke test (Unix)
