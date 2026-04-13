@@ -82,10 +82,7 @@ class TestHookEngine:
         with tempfile.TemporaryDirectory() as tmpdir:
             hooks_file = Path(tmpdir) / "hooks.yaml"
             hooks_file.write_text(
-                "hooks:\n"
-                "  pre-apply:\n"
-                "    - name: validate-yaml\n"
-                "      command: echo 'pre-apply'\n"
+                "hooks:\n  pre-apply:\n    - name: validate-yaml\n      command: echo 'pre-apply'\n"
             )
             engine = HookEngine(hooks_file=str(hooks_file))
             assert len(engine.get_hooks("pre-apply")) == 1
@@ -99,8 +96,15 @@ class TestHookEngine:
     def test_hook_event_types(self) -> None:
         """All expected hook event types exist."""
         events = [
-            "pre-apply", "post-apply", "pre-delete", "post-delete",
-            "pre-deploy", "post-deploy", "on-error", "on-connect", "on-diagnose",
+            "pre-apply",
+            "post-apply",
+            "pre-delete",
+            "post-delete",
+            "pre-deploy",
+            "post-deploy",
+            "on-error",
+            "on-connect",
+            "on-diagnose",
         ]
         for event in events:
             assert hasattr(HookEvent, event.upper().replace("-", "_"))
@@ -128,10 +132,7 @@ class TestHookEngine:
         with tempfile.TemporaryDirectory() as tmpdir:
             hooks_file = Path(tmpdir) / "hooks.yaml"
             hooks_file.write_text(
-                "hooks:\n"
-                "  pre-apply:\n"
-                "    - name: fail-hook\n"
-                "      command: exit 1\n"
+                "hooks:\n  pre-apply:\n    - name: fail-hook\n      command: exit 1\n"
             )
             engine = HookEngine(hooks_file=str(hooks_file))
             ok, reason = engine.can_proceed(HookEvent.PRE_APPLY)
@@ -271,22 +272,10 @@ class TestUserSkillLoader:
 
     def test_validate_skill_markdown(self) -> None:
         """validate_skill_markdown checks required frontmatter."""
-        valid = (
-            "---\n"
-            "name: test\n"
-            "description: Test\n"
-            "trigger: test\n"
-            "---\n"
-            "# Steps\n"
-            "1. Do thing\n"
-        )
+        valid = "---\nname: test\ndescription: Test\ntrigger: test\n---\n# Steps\n1. Do thing\n"
         assert validate_skill_markdown(valid) is True
 
     def test_validate_skill_missing_name(self) -> None:
         """Missing name field fails validation."""
-        invalid = (
-            "---\n"
-            "description: Test\n"
-            "---\n"
-        )
+        invalid = "---\ndescription: Test\n---\n"
         assert validate_skill_markdown(invalid) is False

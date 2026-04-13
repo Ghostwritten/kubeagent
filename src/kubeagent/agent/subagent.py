@@ -230,36 +230,43 @@ class SubAgentDispatcher:
 
         try:
             from kubeagent.tools.builtin.pods import GetPodsTool
+
             tool_registry["get_pods"] = GetPodsTool
         except ImportError:
             pass
         try:
             from kubeagent.tools.builtin.nodes import GetNodesTool
+
             tool_registry["get_nodes"] = GetNodesTool
         except ImportError:
             pass
         try:
             from kubeagent.tools.builtin.namespaces import GetNamespacesTool
+
             tool_registry["get_namespaces"] = GetNamespacesTool
         except ImportError:
             pass
         try:
             from kubeagent.tools.builtin.events import GetEventsTool
+
             tool_registry["get_events"] = GetEventsTool
         except ImportError:
             pass
         try:
             from kubeagent.tools.builtin.services import GetServicesTool
+
             tool_registry["get_services"] = GetServicesTool
         except ImportError:
             pass
         try:
             from kubeagent.tools.builtin.describe import DescribeResourceTool
+
             tool_registry["describe_resource"] = DescribeResourceTool
         except ImportError:
             pass
         try:
             from kubeagent.tools.builtin.logs import GetPodLogsTool
+
             tool_registry["get_pod_logs"] = GetPodLogsTool
         except ImportError:
             pass
@@ -272,9 +279,7 @@ class SubAgentDispatcher:
             if name == "get_pods":
 
                 @agent.tool(retries=1)
-                async def get_pods_tool(
-                    ctx: RunContext[KubeAgentDeps], namespace: str = ""
-                ) -> str:
+                async def get_pods_tool(ctx: RunContext[KubeAgentDeps], namespace: str = "") -> str:
                     from kubeagent.agent.agent import _call_tool
 
                     ns = namespace or ctx.deps.config.cluster.default_namespace
@@ -309,6 +314,7 @@ class SubAgentDispatcher:
             @agent.tool(retries=1)
             async def generic_tool(ctx: RunContext[KubeAgentDeps], **kwargs: str) -> str:
                 from kubeagent.agent.agent import _call_tool
+
                 return _call_tool(tool_cls, ctx, **kwargs)
 
     def aggregate_results(self, agents: list[SubAgent]) -> dict[str, str]:

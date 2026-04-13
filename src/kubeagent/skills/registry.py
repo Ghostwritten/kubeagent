@@ -40,7 +40,6 @@ class SkillRegistry:
             return
         self._user_skills_loaded = True
 
-
         skills_dir = load_user_skills_dir()
         if skills_dir is None:
             return

@@ -29,7 +29,9 @@ from kubeagent.tools.registry import get_registry
 
 class TestBuildClusterContext:
     def test_with_all_info(self) -> None:
-        ctx = build_cluster_context(cluster_name="prod", namespace="default", server="https://k8s.example.com")
+        ctx = build_cluster_context(
+            cluster_name="prod", namespace="default", server="https://k8s.example.com"
+        )
         assert "prod" in ctx
         assert "default" in ctx
         assert "https://k8s.example.com" in ctx
@@ -174,9 +176,7 @@ class TestBuildImpactDescription:
 
     def test_drain_node(self) -> None:
         registry = get_registry()
-        desc = build_impact_description(
-            "drain_node", {"name": "node-1"}, registry
-        )
+        desc = build_impact_description("drain_node", {"name": "node-1"}, registry)
         assert "drain" in desc.lower()
         assert "node-1" in desc
 
@@ -282,9 +282,7 @@ class TestCallToolPolicyGate:
         from kubeagent.tools.builtin.delete import DeleteResourceTool
 
         ctx = self._make_ctx(auto_approve=False)
-        result = _call_tool(
-            DeleteResourceTool, ctx, kind="pod", name="test", namespace="default"
-        )
+        result = _call_tool(DeleteResourceTool, ctx, kind="pod", name="test", namespace="default")
         assert "CONFIRMATION REQUIRED" in result
 
     def test_dangerous_tool_allowed_with_approve(self) -> None:
@@ -293,9 +291,7 @@ class TestCallToolPolicyGate:
         from kubeagent.tools.builtin.delete import DeleteResourceTool
 
         ctx = self._make_ctx(auto_approve=True)
-        result = _call_tool(
-            DeleteResourceTool, ctx, kind="pod", name="test", namespace="default"
-        )
+        result = _call_tool(DeleteResourceTool, ctx, kind="pod", name="test", namespace="default")
         # Should not be blocked — will fail to connect, but not a policy block
         assert "CONFIRMATION REQUIRED" not in result
 
@@ -321,9 +317,7 @@ class TestCallToolPolicyGate:
         from kubeagent.tools.builtin.delete import DeleteResourceTool
 
         ctx = self._make_ctx(dry_run=True)
-        result = _call_tool(
-            DeleteResourceTool, ctx, kind="pod", name="test", namespace="default"
-        )
+        result = _call_tool(DeleteResourceTool, ctx, kind="pod", name="test", namespace="default")
         # dry_run=True makes check_policy return ALLOW, so no policy block
         assert "CONFIRMATION REQUIRED" not in result
         assert "DENIED" not in result

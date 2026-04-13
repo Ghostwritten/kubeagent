@@ -359,9 +359,7 @@ class TestGrafanaTools:
         """GrafanaDashboardListTool calls Grafana API."""
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=lambda: [
-                {"title": "My Dashboard", "uid": "abc", "url": "/d/abc", "tags": []}
-            ],
+            json=lambda: [{"title": "My Dashboard", "uid": "abc", "url": "/d/abc", "tags": []}],
         )
         mock_get.return_value.raise_for_status = lambda: None
         tool = GrafanaDashboardListTool()
@@ -418,9 +416,7 @@ class TestAcceptanceCriteria:
         """All ecosystem tools are BaseTool subclasses with proper metadata."""
         from kubeagent.tools.base import BaseTool
 
-        all_tools = (
-            HELM_TOOLS + ISTIO_TOOLS + ARGOCD_TOOLS + PROMETHEUS_TOOLS + GRAFANA_TOOLS
-        )
+        all_tools = HELM_TOOLS + ISTIO_TOOLS + ARGOCD_TOOLS + PROMETHEUS_TOOLS + GRAFANA_TOOLS
         assert len(all_tools) == 24
         for tool_cls in all_tools:
             instance = tool_cls()

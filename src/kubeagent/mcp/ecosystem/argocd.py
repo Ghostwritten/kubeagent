@@ -29,7 +29,9 @@ def _run_argocd(*args: str, timeout: int = 30) -> dict[str, Any]:
         except (json.JSONDecodeError, ValueError):
             return {"output": output}
     except FileNotFoundError:
-        return {"error": "argocd CLI not found. Install: https://argo-cd.readthedocs.io/en/stable/cli_installation/"}
+        return {
+            "error": "argocd CLI not found. Install: https://argo-cd.readthedocs.io/en/stable/cli_installation/"
+        }
     except subprocess.TimeoutExpired:
         return {"error": f"argocd command timed out ({timeout}s)"}
 

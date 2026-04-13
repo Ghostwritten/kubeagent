@@ -66,9 +66,7 @@ class TestSQLiteStorage:
                 "INSERT INTO preferences (key, value) VALUES (?, ?)",
                 ("test_key", "test_value"),
             )
-            row = storage.fetchone(
-                "SELECT value FROM preferences WHERE key = ?", ("test_key",)
-            )
+            row = storage.fetchone("SELECT value FROM preferences WHERE key = ?", ("test_key",))
             assert row is not None
             assert row[0] == "test_value"
             storage.close()
@@ -316,9 +314,7 @@ class TestCallToolAuditIntegration:
                 auto_approve=True,
                 memory=mm,
             )
-            _call_tool(
-                DeleteResourceTool, ctx, kind="pod", name="test", namespace="default"
-            )
+            _call_tool(DeleteResourceTool, ctx, kind="pod", name="test", namespace="default")
             entries = mm.audit.query()
             assert len(entries) == 1
             assert entries[0].tool_name == "delete_resource"
@@ -368,9 +364,7 @@ class TestREPLMemoryCommands:
     def _make_repl(self, tmpdir: str):
         from kubeagent.cli.repl import KubeAgentREPL
 
-        config = KubeAgentConfig(
-            memory=MemoryConfig(db_path=str(Path(tmpdir) / "test.db"))
-        )
+        config = KubeAgentConfig(memory=MemoryConfig(db_path=str(Path(tmpdir) / "test.db")))
         repl = KubeAgentREPL(config)
         repl._init_memory()
         return repl
@@ -427,9 +421,7 @@ class TestMemorySystemIntegration:
 
     def test_full_lifecycle(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
-            config = KubeAgentConfig(
-                memory=MemoryConfig(db_path=str(Path(tmpdir) / "test.db"))
-            )
+            config = KubeAgentConfig(memory=MemoryConfig(db_path=str(Path(tmpdir) / "test.db")))
 
             # MemoryManager
             mm = MemoryManager(config.memory)

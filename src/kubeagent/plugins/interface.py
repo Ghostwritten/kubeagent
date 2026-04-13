@@ -12,9 +12,9 @@ import yaml
 class PluginType(StrEnum):
     """Type of plugin."""
 
-    TOOL = "tool"       # Adds tools to the agent
-    SKILL = "skill"     # Adds skills
-    POLICY = "policy"   # Adds policy rules
+    TOOL = "tool"  # Adds tools to the agent
+    SKILL = "skill"  # Adds skills
+    POLICY = "policy"  # Adds policy rules
 
 
 @dataclass

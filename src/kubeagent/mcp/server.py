@@ -99,8 +99,7 @@ class KubeAgentMCPServer:
         param_names = [
             name
             for name, p in sig.parameters.items()
-            if name not in ("self", "executor")
-            and p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL)
+            if name not in ("self", "executor") and p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL)
         ]
         params_doc = f"Accepted params: {', '.join(param_names)}" if param_names else ""
 

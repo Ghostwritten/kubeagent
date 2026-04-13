@@ -126,9 +126,7 @@ class PreferencesManager:
 
     def get(self, key: str) -> str | None:
         """Get a single preference value."""
-        row = self._storage.fetchone(
-            "SELECT value FROM preferences WHERE key = ?", (key,)
-        )
+        row = self._storage.fetchone("SELECT value FROM preferences WHERE key = ?", (key,))
         return row[0] if row else None
 
     def get_all(self) -> dict[str, str]:

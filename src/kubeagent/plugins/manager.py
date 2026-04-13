@@ -83,6 +83,7 @@ class PluginManager:
         module_name, class_name = manifest.entry_point.split(":", 1)
 
         import importlib
+
         mod = importlib.import_module(module_name)
         cls = getattr(mod, class_name)
         instance = cls()

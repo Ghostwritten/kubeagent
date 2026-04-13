@@ -113,12 +113,14 @@ class PrometheusTargetsTool(BaseTool):
                 active = data.get("data", {}).get("activeTargets", [])
                 summary = []
                 for t in active:
-                    summary.append({
-                        "job": t.get("labels", {}).get("job", ""),
-                        "instance": t.get("labels", {}).get("instance", ""),
-                        "health": t.get("health", ""),
-                        "last_scrape": t.get("lastScrape", ""),
-                    })
+                    summary.append(
+                        {
+                            "job": t.get("labels", {}).get("job", ""),
+                            "instance": t.get("labels", {}).get("instance", ""),
+                            "health": t.get("health", ""),
+                            "last_scrape": t.get("lastScrape", ""),
+                        }
+                    )
                 return {"targets": summary, "total": len(summary)}
             return data
         except requests.ConnectionError:

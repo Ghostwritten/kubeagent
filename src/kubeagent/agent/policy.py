@@ -141,13 +141,12 @@ def needs_double_confirmation(tool_name: str, registry: ToolRegistry) -> bool:
 # ---------------------------------------------------------------------------
 
 
-
 class Role(StrEnum):
     """User roles for RBAC."""
 
-    ADMIN = "admin"      # Full access
+    ADMIN = "admin"  # Full access
     OPERATOR = "operator"  # Read/write, no cluster-admin
-    VIEWER = "viewer"    # Read-only
+    VIEWER = "viewer"  # Read-only
 
 
 @dataclass
@@ -171,9 +170,7 @@ class RBACPolicy:
     """
 
     role: Role = Role.OPERATOR
-    protected_namespaces: list[str] = field(
-        default_factory=lambda: ["kube-system", "kube-public"]
-    )
+    protected_namespaces: list[str] = field(default_factory=lambda: ["kube-system", "kube-public"])
     rules: list[PolicyRule] = field(default_factory=list)
 
     def can_get(self, resource: str, namespace: str) -> bool:
@@ -213,4 +210,3 @@ class RBACPolicy:
         if self.role == Role.VIEWER:
             return False
         return True
-

@@ -26,7 +26,9 @@ def _run_istioctl(*args: str, timeout: int = 30) -> dict[str, Any]:
             "command": " ".join(cmd),
         }
     except FileNotFoundError:
-        return {"error": "istioctl not found. Install: https://istio.io/latest/docs/setup/getting-started/"}
+        return {
+            "error": "istioctl not found. Install: https://istio.io/latest/docs/setup/getting-started/"
+        }
     except subprocess.TimeoutExpired:
         return {"error": f"istioctl command timed out ({timeout}s)"}
 
