@@ -115,7 +115,7 @@ jobs:
 
             ## Installation
             ```bash
-            pip install kubeagent==${{ github.ref_name }}
+            pip install kubeagent-cli==${{ github.ref_name }}
             # or
             docker pull ghcr.io/ghostwritten/kubeagent:${{ github.ref_name }}
             ```
@@ -134,7 +134,7 @@ jobs:
       - name: Wait for PyPI availability
         run: |
           for i in $(seq 1 30); do
-            if pip index versions kubeagent 2>/dev/null | grep -q "${{ steps.version.outputs.version }}"; then
+            if pip index versions kubeagent-cli 2>/dev/null | grep -q "${{ steps.version.outputs.version }}"; then
               echo "Version available on PyPI"
               exit 0
             fi
@@ -146,8 +146,8 @@ jobs:
       - name: Download sdist and compute sha256
         id: sha
         run: |
-          pip download kubeagent==${{ steps.version.outputs.version }} --no-binary :all: --no-deps -d /tmp/dist || true
-          SDIST=$(ls /tmp/dist/kubeagent-*.tar.gz 2>/dev/null | head -1)
+          pip download kubeagent-cli==${{ steps.version.outputs.version }} --no-binary :all: --no-deps -d /tmp/dist || true
+          SDIST=$(ls /tmp/dist/kubeagent_cli-*.tar.gz 2>/dev/null | head -1)
           if [ -n "$SDIST" ]; then
             SHA=$(sha256sum "$SDIST" | cut -d' ' -f1)
           else

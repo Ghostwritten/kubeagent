@@ -1,5 +1,5 @@
 [project]
-name = "kubeagent"
+name = "kubeagent-cli"
 version = "1.0.0"
 description = "A natural language CLI agent for Kubernetes cluster management"
 readme = "README.md"
